@@ -39,7 +39,7 @@ function getPortrait( index ) {
 
 
 function create( diy ) {
-	diy.version = 4;
+	diy.version = 5;
 	diy.extensionName = 'Xwing.seext';
 	diy.faceStyle = FaceStyle.CARD_AND_MARKER;
 	diy.transparentFaces = true;
@@ -54,8 +54,8 @@ function create( diy ) {
 	portraits[0] = new DefaultPortrait( diy, 'pilot' );
 	portraits[0].setScaleUsesMinimum( false );
 	portraits[0].facesToUpdate = 1;
-	portraits[0].backgroundFilled = true;
-	portraits[0].clipping = true;
+	portraits[0].backgroundFilled = false;
+	portraits[0].clipping = false;
 	portraits[0].installDefault();
 	
 	// Ship Icon, Card
@@ -79,6 +79,7 @@ function create( diy ) {
 	diy.name = #xw-pilot-name;
 	$ShipType = #xw-pilot-ship;
 	$Affiliation = #xw-pilot-affiliation;
+	$Style = #xw-pilot-style;
 	$PilotSkill = #xw-pilot-ps;
 	$UniquePilot = #xw-pilot-unique;
 	$ElitePilotTalent = #xw-pilot-elite;
@@ -183,6 +184,13 @@ function createInterface( diy, editor ) {
 	eliteCheckbox = checkBox( @xw-elite );
 	bindings.add( 'ElitePilotTalent', eliteCheckbox, [0] );
 	
+	styleItems = [];
+	styleItems[0] = ListItem( 'regular', @xw-style-regular );
+	//styleItems[1] = ListItem( 'extended', @xw-style-extended );
+	styleItems[1] = ListItem( 'full', @xw-style-full );
+	styleBox = comboBox( styleItems );
+	bindings.add( 'Style', styleBox, [0] );	
+	
 	pilotTextArea = textArea( '', 6, 15, true );
 	bindings.add( 'Text', pilotTextArea, [0] );
 	
@@ -210,13 +218,15 @@ function createInterface( diy, editor ) {
 	mainPanel.place( uniqueCheckbox, '' );
 	mainPanel.place( eliteCheckbox, 'wrap para' );
 	mainPanel.place( separator(), 'span, growx, wrap para' );
+	mainPanel.place( @xw-style, '', styleBox, 'span 1, growx, wrap para' );	
+	mainPanel.place( separator(), 'span, growx, wrap para' );
 	mainPanel.place( @xw-pilottext, 'span, grow, wrap para' );
 	mainPanel.place( pilotTextArea, 'span, grow, wrap para' );
 	mainPanel.place( symbolsTagTip, '', headersTagTip, '', shipsTagTip, 'span, grow, wrap para' );
 	mainPanel.place( separator(), 'span, growx, wrap para' );
 	mainPanel.place( @xw-pointadjuster, 'span 2', pointAdjuster, '',  pointAdjusterTip, 'wrap para');
 	mainPanel.place( separator(), 'span, growx, wrap para' );
-	mainPanel.place( aiCheckbox, 'wrap para' );
+	mainPanel.place( aiCheckbox, 'span, growx, wrap para' );
 	mainPanel.place( separator(), 'span, growx, wrap para' );
 	mainPanel.place( pilotPanel, 'span, growx, wrap' );
 	mainPanel.editorTabScrolling = true;
@@ -767,18 +777,23 @@ function paintFront( g, diy, sheet ) {
 	//============== Front Sheet ==============
 	
 	//Draw template
-	imageTemplate =  'pilot-' + Xwing.getPrimaryFaction( $Affiliation ) + '-front-template';
+	imageTemplate =  'pilot-background-template';
 	sheet.paintImage( g, imageTemplate, 0, 0);
-	
-	if( $Affiliation == 'resistance' || $Affiliation == 'empire' || $Affiliation == 'firstorder' ) {
-		imageTemplate = 'pilot-' + $Affiliation + '-front-template';
-		sheet.paintImage( g, imageTemplate, 0, 0);	
-	}
-	
-	
+
 	//Draw portrait
 	target = sheet.getRenderTarget();
 	portraits[0].paint( g, target );
+	
+	if( $Style == 'regular' ) {
+		imageTemplate =  'pilot-' + Xwing.getPrimaryFaction( $Affiliation ) + '-front-template';
+		sheet.paintImage( g, imageTemplate, 0, 0);
+		
+		if( $Affiliation == 'resistance' || $Affiliation == 'empire' || $Affiliation == 'firstorder' ) {
+			imageTemplate = 'pilot-' + $Affiliation + '-front-template';
+			sheet.paintImage( g, imageTemplate, 0, 0);	
+		}
+	}
+		
 
 	// Draw the name
 	if( $$UniquePilot.yesNo ) {
@@ -955,6 +970,7 @@ function onClear() {
 	$PilotSkill = '0';
 	$UniquePilot = 'no';
 	$ElitePilotTalent = 'no';
+	$Style = 'regular';
 	$Text = '';
 	$PointAdjuster = '0';	
 	$AturiClusterAI = 'no';	
@@ -1017,7 +1033,11 @@ function onRead( diy, ois ) {
 		$AturiClusterAI = 'no';
 		diy.version = 4;
 	}
-
+	if( diy.version < 5 ) {
+		$Style = 'regular';
+		diy.version = 5;
+	}
+	
 	
 	portraits[0] = ois.readObject();
 	portraits[1] = ois.readObject();
